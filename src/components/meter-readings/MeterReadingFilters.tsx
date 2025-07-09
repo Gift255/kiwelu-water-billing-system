@@ -41,7 +41,7 @@ export const MeterReadingFilters: React.FC<MeterReadingFiltersProps> = ({
           <SelectValue placeholder="All Zones" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Zones</SelectItem>
+          <SelectItem value="all">All Zones</SelectItem>
           <SelectItem value="Zone A">Zone A</SelectItem>
           <SelectItem value="Zone B">Zone B</SelectItem>
           <SelectItem value="Zone C">Zone C</SelectItem>
@@ -53,7 +53,7 @@ export const MeterReadingFilters: React.FC<MeterReadingFiltersProps> = ({
           <SelectValue placeholder="All Status" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Status</SelectItem>
+          <SelectItem value="all">All Status</SelectItem>
           <SelectItem value="validated">Validated</SelectItem>
           <SelectItem value="pending">Pending</SelectItem>
           <SelectItem value="flagged">Flagged</SelectItem>

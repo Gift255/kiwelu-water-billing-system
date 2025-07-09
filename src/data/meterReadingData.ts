@@ -125,8 +125,8 @@ export const filterReadings = (
   selectedPeriod: string
 ) => {
   return readings.filter(reading => {
-    const matchesZone = !selectedZone || reading.zone === selectedZone;
-    const matchesStatus = !selectedStatus || reading.status === selectedStatus;
+    const matchesZone = selectedZone === "all" || !selectedZone || reading.zone === selectedZone;
+    const matchesStatus = selectedStatus === "all" || !selectedStatus || reading.status === selectedStatus;
     // For period filtering, you could add date range logic here
     return matchesZone && matchesStatus;
   });
