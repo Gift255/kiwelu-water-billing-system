@@ -66,7 +66,7 @@ const readings = [
   }
 ];
 
-const MeterReadings = () => {
+const MeterReadings: React.FC = () => {
   const [selectedZone, setSelectedZone] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedPeriod, setSelectedPeriod] = useState("current");
