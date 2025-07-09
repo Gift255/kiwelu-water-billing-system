@@ -1,4 +1,4 @@
-import { Bell, Send, MessageSquare, Phone, Settings } from "lucide-react";
+import { Send, MessageSquare, Phone, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,38 +19,56 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const notifications = [
-  {
-    id: "SMS-001234",
-    recipient: "John Doe (+255 712 345 678)",
-    message: "Your water bill for June 2025 is TZS 22,000. Due date: July 15, 2025.",
-    type: "billing",
-    status: "delivered",
-    sentDate: "2025-06-15 14:30",
-    cost: 150
-  },
-  {
-    id: "SMS-001235",
-    recipient: "Sarah Johnson (+255 713 456 789)",
-    message: "Payment of TZS 35,000 received. Thank you for your payment.",
-    type: "payment_confirmation",
-    status: "delivered",
-    sentDate: "2025-06-14 16:45",
-    cost: 150
-  },
-  {
-    id: "SMS-001236",
-    recipient: "Michael Brown (+255 714 567 890)",
-    message: "Meter reading recorded: 1820 m³. Your bill will be generated soon.",
-    type: "reading_confirmation",
-    status: "failed",
-    sentDate: "2025-06-13 10:20",
-    cost: 0
-  }
-];
+import { useSMSNotifications, useCustomers } from "@/hooks/useDataStore";
+import { dataStore } from "@/data/globalData";
+import { useState } from "react";
+import { toast } from "@/components/ui/sonner";
 
 const Notifications = () => {
+  const notifications = useSMSNotifications();
+  const customers = useCustomers();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedType, setSelectedType] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [messageType, setMessageType] = useState("custom");
+  const [recipientGroup, setRecipientGroup] = useState("all");
+  const [customMessage, setCustomMessage] = useState("");
+  
+  const smsStats = {
+    total: notifications.length,
+    delivered: notifications.filter(n => n.status === 'delivered').length,
+    failed: notifications.filter(n => n.status === 'failed').length,
+    totalCost: notifications.reduce((sum, n) => sum + n.cost, 0)
+  };
+
+  const filteredNotifications = notifications.filter(notification => {
+    const matchesSearch = notification.recipient.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         notification.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         notification.id.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesType = selectedType === "all" || notification.type === selectedType;
+    const matchesStatus = selectedStatus === "all" || notification.status === selectedStatus;
+    
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
+  const getRecipientsForGroup = (group: string) => {
+    switch (group) {
+      case "all":
+        return customers;
+      case "zone_a":
+        return customers.filter(c => c.zone === "Zone A");
+      case "zone_b":
+        return customers.filter(c => c.zone === "Zone B");
+      case "zone_c":
+        return customers.filter(c => c.zone === "Zone C");
+      case "overdue":
+        return customers.filter(c => c.balance < 0);
+      default:
+        return customers;
+    }
+  };
+
   const getTypeBadge = (type: string) => {
     switch (type) {
       case "billing":
@@ -77,6 +95,39 @@ const Notifications = () => {
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
+  };
+
+  const handleSendSMS = () => {
+    if (!customMessage.trim()) {
+      toast.error("Please enter a message");
+      return;
+    }
+
+    const recipients = getRecipientsForGroup(recipientGroup);
+    
+    if (recipients.length === 0) {
+      toast.error("No recipients found for selected group");
+      return;
+    }
+
+    // Send SMS to all recipients
+    recipients.forEach((customer, index) => {
+      const notification = {
+        id: `SMS-${Date.now()}-${index}`,
+        recipient: `${customer.name} (${customer.phone})`,
+        customerId: customer.id,
+        message: customMessage,
+        type: messageType as any,
+        status: 'delivered' as const,
+        sentDate: new Date().toISOString(),
+        cost: 150
+      };
+      
+      dataStore.sendSMS(notification);
+    });
+
+    toast.success(`SMS sent to ${recipients.length} recipients`);
+    setCustomMessage("");
   };
 
   return (
@@ -110,7 +161,7 @@ const Notifications = () => {
                 <MessageSquare className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">2,847</p>
+                <p className="text-2xl font-bold">{smsStats.total}</p>
                 <p className="text-sm text-muted-foreground">SMS Sent</p>
               </div>
             </div>
@@ -124,7 +175,7 @@ const Notifications = () => {
                 <MessageSquare className="w-6 h-6 text-success" />
               </div>
               <div>
-                <p className="text-2xl font-bold">2,798</p>
+                <p className="text-2xl font-bold">{smsStats.delivered}</p>
                 <p className="text-sm text-muted-foreground">Delivered</p>
               </div>
             </div>
@@ -138,7 +189,7 @@ const Notifications = () => {
                 <MessageSquare className="w-6 h-6 text-destructive" />
               </div>
               <div>
-                <p className="text-2xl font-bold">49</p>
+                <p className="text-2xl font-bold">{smsStats.failed}</p>
                 <p className="text-sm text-muted-foreground">Failed</p>
               </div>
             </div>
@@ -152,7 +203,7 @@ const Notifications = () => {
                 <Phone className="w-6 h-6 text-warning" />
               </div>
               <div>
-                <p className="text-2xl font-bold">TZS 427K</p>
+                <p className="text-2xl font-bold">TZS {Math.round(smsStats.totalCost / 1000)}K</p>
                 <p className="text-sm text-muted-foreground">SMS Costs</p>
               </div>
             </div>
@@ -168,7 +219,7 @@ const Notifications = () => {
         <CardContent>
           <div className="grid gap-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <Select>
+              <Select value={messageType} onValueChange={setMessageType}>
                 <SelectTrigger>
                   <SelectValue placeholder="Message Type" />
                 </SelectTrigger>
@@ -181,36 +232,48 @@ const Notifications = () => {
                 </SelectContent>
               </Select>
               
-              <Select>
+              <Select value={recipientGroup} onValueChange={setRecipientGroup}>
                 <SelectTrigger>
                   <SelectValue placeholder="Recipient Group" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Customers</SelectItem>
-                  <SelectItem value="zone_a">Zone A</SelectItem>
-                  <SelectItem value="zone_b">Zone B</SelectItem>
+                  <SelectItem value="zone_a">Zone A ({customers.filter(c => c.zone === "Zone A").length} customers)</SelectItem>
+                  <SelectItem value="zone_b">Zone B ({customers.filter(c => c.zone === "Zone B").length} customers)</SelectItem>
+                  <SelectItem value="zone_c">Zone C ({customers.filter(c => c.zone === "Zone C").length} customers)</SelectItem>
                   <SelectItem value="overdue">Overdue Accounts</SelectItem>
-                  <SelectItem value="custom">Custom Selection</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <Textarea
               placeholder="Enter your message here... (160 characters max)"
+              value={customMessage}
+              onChange={(e) => setCustomMessage(e.target.value)}
               className="min-h-20"
+              maxLength={160}
             />
 
             <div className="flex justify-between items-center">
               <div className="text-sm text-muted-foreground">
-                Estimated cost: TZS 187,000 (1,247 recipients × TZS 150)
+                {customMessage.length}/160 characters
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline">Preview</Button>
-                <Button className="bg-gradient-primary">
-                  <Send className="w-4 h-4 mr-2" />
-                  Send SMS
-                </Button>
+              <div className="text-sm text-muted-foreground">
+                Estimated cost: TZS {(getRecipientsForGroup(recipientGroup).length * 150).toLocaleString()} 
+                ({getRecipientsForGroup(recipientGroup).length} recipients × TZS 150)
               </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1">Preview</Button>
+              <Button 
+                className="flex-1 bg-gradient-primary"
+                onClick={handleSendSMS}
+                disabled={!customMessage.trim()}
+              >
+                <Send className="w-4 h-4 mr-2" />
+                Send SMS
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -225,9 +288,11 @@ const Notifications = () => {
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <Input
               placeholder="Search by recipient or message..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1"
             />
-            <Select>
+            <Select value={selectedType} onValueChange={setSelectedType}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Message Type" />
               </SelectTrigger>
@@ -239,7 +304,7 @@ const Notifications = () => {
                 <SelectItem value="reminder">Reminder</SelectItem>
               </SelectContent>
             </Select>
-            <Select>
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -267,7 +332,7 @@ const Notifications = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {notifications.map((notification) => (
+                {filteredNotifications.map((notification) => (
                   <TableRow key={notification.id}>
                     <TableCell>
                       <div className="font-mono text-sm">{notification.id}</div>
