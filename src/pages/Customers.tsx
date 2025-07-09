@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,8 +10,8 @@ import { customers, filterCustomers } from "@/data/customerData";
 
 const Customers = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedZone, setSelectedZone] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("");
+  const [selectedZone, setSelectedZone] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
 
   const filteredCustomers = filterCustomers(customers, searchTerm, selectedZone, selectedStatus);
 

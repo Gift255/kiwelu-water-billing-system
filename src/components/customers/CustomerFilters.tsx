@@ -1,3 +1,4 @@
+
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -42,7 +43,7 @@ export const CustomerFilters: React.FC<CustomerFiltersProps> = ({
           <SelectValue placeholder="All Zones" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Zones</SelectItem>
+          <SelectItem value="all">All Zones</SelectItem>
           <SelectItem value="Zone A">Zone A</SelectItem>
           <SelectItem value="Zone B">Zone B</SelectItem>
           <SelectItem value="Zone C">Zone C</SelectItem>
@@ -54,7 +55,7 @@ export const CustomerFilters: React.FC<CustomerFiltersProps> = ({
           <SelectValue placeholder="All Status" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Status</SelectItem>
+          <SelectItem value="all">All Status</SelectItem>
           <SelectItem value="active">Active</SelectItem>
           <SelectItem value="suspended">Suspended</SelectItem>
           <SelectItem value="inactive">Inactive</SelectItem>

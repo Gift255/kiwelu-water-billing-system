@@ -85,8 +85,8 @@ export const filterCustomers = (
                          customer.phone.includes(searchTerm) ||
                          customer.meterId.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesZone = !selectedZone || customer.zone === selectedZone;
-    const matchesStatus = !selectedStatus || customer.status === selectedStatus;
+    const matchesZone = !selectedZone || selectedZone === "all" || customer.zone === selectedZone;
+    const matchesStatus = !selectedStatus || selectedStatus === "all" || customer.status === selectedStatus;
     
     return matchesSearch && matchesZone && matchesStatus;
   });
