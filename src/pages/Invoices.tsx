@@ -1,4 +1,4 @@
-import { FileText, Download, Send, Eye } from "lucide-react";
+import { FileText, Download, Send, Eye, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,44 +18,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const invoices = [
-  {
-    id: "INV-2025-001234",
-    customerId: "C001",
-    customerName: "John Doe",
-    amount: 22000,
-    consumption: 25,
-    issueDate: "2025-06-15",
-    dueDate: "2025-07-15",
-    status: "sent",
-    paymentStatus: "pending"
-  },
-  {
-    id: "INV-2025-001235", 
-    customerId: "C002",
-    customerName: "Sarah Johnson",
-    amount: 35000,
-    consumption: 35,
-    issueDate: "2025-06-14",
-    dueDate: "2025-07-14",
-    status: "sent",
-    paymentStatus: "paid"
-  },
-  {
-    id: "INV-2025-001236",
-    customerId: "C003",
-    customerName: "Michael Brown",
-    amount: 45000,
-    consumption: 18,
-    issueDate: "2025-05-15",
-    dueDate: "2025-06-15",
-    status: "sent",
-    paymentStatus: "overdue"
-  }
-];
+import { useDataStore, useInvoices } from "@/hooks/useDataStore";
+import { useState } from "react";
+import { toast } from "@/components/ui/sonner";
 
 const Invoices = () => {
+  const dataStore = useDataStore();
+  const invoices = useInvoices();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState("all");
+  const [selectedPeriod, setSelectedPeriod] = useState("current");
+  
+  const invoiceStats = dataStore.getInvoiceStats();
+  const totalAmount = invoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
+  const paidAmount = invoices
+    .filter(inv => inv.paymentStatus === 'paid')
+    .reduce((sum, inv) => sum + inv.totalAmount, 0);
+  const pendingAmount = invoices
+    .filter(inv => inv.paymentStatus === 'pending')
+    .reduce((sum, inv) => sum + inv.totalAmount, 0);
+  const overdueAmount = invoices
+    .filter(inv => {
+      const dueDate = new Date(inv.dueDate);
+      return inv.paymentStatus === 'pending' && dueDate < new Date();
+    })
+    .reduce((sum, inv) => sum + inv.totalAmount, 0);
+
+  const filteredInvoices = invoices.filter(invoice => {
+    const matchesSearch = invoice.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         invoice.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         invoice.customerId.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesPaymentStatus = selectedPaymentStatus === "all" || invoice.paymentStatus === selectedPaymentStatus;
+    
+    return matchesSearch && matchesPaymentStatus;
+  });
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "draft":
@@ -80,6 +78,21 @@ const Invoices = () => {
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
+  };
+
+  const handleSendInvoice = (invoiceId: string, customerName: string) => {
+    // In a real app, this would send the invoice via email/SMS
+    toast.success(`Invoice sent to ${customerName}`);
+  };
+
+  const handleDownloadInvoice = (invoiceId: string) => {
+    // In a real app, this would generate and download a PDF
+    toast.info(`Downloading invoice ${invoiceId}...`);
+  };
+
+  const handlePrintInvoice = (invoiceId: string) => {
+    // In a real app, this would open print dialog
+    toast.info(`Printing invoice ${invoiceId}...`);
   };
 
   return (
@@ -113,7 +126,7 @@ const Invoices = () => {
                 <FileText className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">1,089</p>
+                <p className="text-2xl font-bold">{invoiceStats.total}</p>
                 <p className="text-sm text-muted-foreground">Total Invoices</p>
               </div>
             </div>
@@ -127,8 +140,9 @@ const Invoices = () => {
                 <FileText className="w-6 h-6 text-success" />
               </div>
               <div>
-                <p className="text-2xl font-bold">892</p>
+                <p className="text-2xl font-bold">{invoiceStats.paid}</p>
                 <p className="text-sm text-muted-foreground">Paid</p>
+                <p className="text-xs text-muted-foreground">TZS {Math.round(paidAmount / 1000)}K</p>
               </div>
             </div>
           </CardContent>
@@ -141,8 +155,9 @@ const Invoices = () => {
                 <FileText className="w-6 h-6 text-warning" />
               </div>
               <div>
-                <p className="text-2xl font-bold">174</p>
+                <p className="text-2xl font-bold">{invoiceStats.pending}</p>
                 <p className="text-sm text-muted-foreground">Pending</p>
+                <p className="text-xs text-muted-foreground">TZS {Math.round(pendingAmount / 1000)}K</p>
               </div>
             </div>
           </CardContent>
@@ -155,8 +170,9 @@ const Invoices = () => {
                 <FileText className="w-6 h-6 text-destructive" />
               </div>
               <div>
-                <p className="text-2xl font-bold">23</p>
+                <p className="text-2xl font-bold">{invoiceStats.overdue}</p>
                 <p className="text-sm text-muted-foreground">Overdue</p>
+                <p className="text-xs text-muted-foreground">TZS {Math.round(overdueAmount / 1000)}K</p>
               </div>
             </div>
           </CardContent>
@@ -172,6 +188,8 @@ const Invoices = () => {
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <Input
               placeholder="Search invoices..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1"
             />
             <Select>
@@ -179,7 +197,7 @@ const Invoices = () => {
                 <SelectValue placeholder="Payment Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="all">All Payment Status</SelectItem>
                 <SelectItem value="paid">Paid</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="overdue">Overdue</SelectItem>
@@ -190,9 +208,9 @@ const Invoices = () => {
                 <SelectValue placeholder="Period" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="current">June 2025</SelectItem>
-                <SelectItem value="previous">May 2025</SelectItem>
-                <SelectItem value="april">April 2025</SelectItem>
+                <SelectItem value="current">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</SelectItem>
+                <SelectItem value="previous">Previous Month</SelectItem>
+                <SelectItem value="all">All Periods</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -213,7 +231,7 @@ const Invoices = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invoices.map((invoice) => (
+                {filteredInvoices.map((invoice) => (
                   <TableRow key={invoice.id}>
                     <TableCell>
                       <div className="font-mono text-sm">{invoice.id}</div>
@@ -225,7 +243,7 @@ const Invoices = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="font-semibold">TZS {invoice.amount.toLocaleString()}</div>
+                      <div className="font-semibold">TZS {invoice.totalAmount.toLocaleString()}</div>
                     </TableCell>
                     <TableCell>{invoice.consumption} m³</TableCell>
                     <TableCell className="text-sm">{invoice.issueDate}</TableCell>
@@ -237,11 +255,26 @@ const Invoices = () => {
                         <Button variant="ghost" size="sm">
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDownloadInvoice(invoice.id)}
+                        >
                           <Download className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleSendInvoice(invoice.id, invoice.customerName)}
+                        >
                           <Send className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handlePrintInvoice(invoice.id)}
+                        >
+                          <Printer className="w-4 h-4" />
                         </Button>
                       </div>
                     </TableCell>

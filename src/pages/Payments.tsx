@@ -1,5 +1,4 @@
-import { DollarSign, Plus, CreditCard, Smartphone, Banknote } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { DollarSign, CreditCard, Smartphone, Banknote, Receipt } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -18,47 +17,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const payments = [
-  {
-    id: "PAY-001234",
-    invoiceId: "INV-2025-001235",
-    customerId: "C002",
-    customerName: "Sarah Johnson",
-    amount: 35000,
-    method: "mobile_money",
-    reference: "MP25061412345",
-    date: "2025-06-14",
-    status: "confirmed",
-    collector: "Accountant 1"
-  },
-  {
-    id: "PAY-001235",
-    invoiceId: "INV-2025-001234", 
-    customerId: "C001",
-    customerName: "John Doe",
-    amount: 22000,
-    method: "cash",
-    reference: "CASH-25061501",
-    date: "2025-06-15",
-    status: "confirmed",
-    collector: "Collector 2"
-  },
-  {
-    id: "PAY-001236",
-    invoiceId: "INV-2025-001236",
-    customerId: "C003",
-    customerName: "Michael Brown",
-    amount: 20000,
-    method: "bank_transfer",
-    reference: "BT25061398765",
-    date: "2025-06-13",
-    status: "pending",
-    collector: "Accountant 1"
-  }
-];
+import { AddPaymentDialog } from "@/components/payments/AddPaymentDialog";
+import { useDataStore, usePayments } from "@/hooks/useDataStore";
+import { useState } from "react";
+import { toast } from "@/components/ui/sonner";
 
 const Payments = () => {
+  const dataStore = useDataStore();
+  const payments = usePayments();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedMethod, setSelectedMethod] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  
+  const paymentStats = dataStore.getPaymentStats();
+
+  const filteredPayments = payments.filter(payment => {
+    const matchesSearch = payment.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         payment.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         payment.reference.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesMethod = selectedMethod === "all" || payment.method === selectedMethod;
+    const matchesStatus = selectedStatus === "all" || payment.status === selectedStatus;
+    
+    return matchesSearch && matchesMethod && matchesStatus;
+  });
+
   const getMethodIcon = (method: string) => {
     switch (method) {
       case "cash":
@@ -104,6 +87,11 @@ const Payments = () => {
     }
   };
 
+  const handleGenerateReceipt = (paymentId: string) => {
+    // In a real app, this would generate and download a receipt
+    toast.info(`Generating receipt for payment ${paymentId}...`);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Page Header */}
@@ -114,10 +102,7 @@ const Payments = () => {
             Track and manage customer payments across all channels
           </p>
         </div>
-        <Button className="bg-gradient-primary shadow-medium">
-          <Plus className="w-4 h-4 mr-2" />
-          Record Payment
-        </Button>
+        <AddPaymentDialog />
       </div>
 
       {/* Payment Stats */}
@@ -129,7 +114,7 @@ const Payments = () => {
                 <DollarSign className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">TZS 158M</p>
+                <p className="text-2xl font-bold">TZS {Math.round(paymentStats.totalAmount / 1000)}K</p>
                 <p className="text-sm text-muted-foreground">Total Collected</p>
               </div>
             </div>
@@ -143,7 +128,7 @@ const Payments = () => {
                 <Banknote className="w-6 h-6 text-success" />
               </div>
               <div>
-                <p className="text-2xl font-bold">TZS 89M</p>
+                <p className="text-2xl font-bold">TZS {Math.round(paymentStats.cashAmount / 1000)}K</p>
                 <p className="text-sm text-muted-foreground">Cash Payments</p>
               </div>
             </div>
@@ -157,7 +142,7 @@ const Payments = () => {
                 <Smartphone className="w-6 h-6 text-warning" />
               </div>
               <div>
-                <p className="text-2xl font-bold">TZS 54M</p>
+                <p className="text-2xl font-bold">TZS {Math.round(paymentStats.mobileMoneyAmount / 1000)}K</p>
                 <p className="text-sm text-muted-foreground">Mobile Money</p>
               </div>
             </div>
@@ -171,7 +156,7 @@ const Payments = () => {
                 <CreditCard className="w-6 h-6 text-info" />
               </div>
               <div>
-                <p className="text-2xl font-bold">TZS 15M</p>
+                <p className="text-2xl font-bold">TZS {Math.round(paymentStats.bankTransferAmount / 1000)}K</p>
                 <p className="text-sm text-muted-foreground">Bank Transfers</p>
               </div>
             </div>
@@ -188,9 +173,11 @@ const Payments = () => {
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <Input
               placeholder="Search payments by customer, reference..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1"
             />
-            <Select>
+            <Select value={selectedMethod} onValueChange={setSelectedMethod}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Payment Method" />
               </SelectTrigger>
@@ -201,7 +188,7 @@ const Payments = () => {
                 <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
               </SelectContent>
             </Select>
-            <Select>
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -231,7 +218,7 @@ const Payments = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {payments.map((payment) => (
+                {filteredPayments.map((payment) => (
                   <TableRow key={payment.id}>
                     <TableCell>
                       <div className="font-mono text-sm">{payment.id}</div>
@@ -260,8 +247,12 @@ const Payments = () => {
                         <Button variant="ghost" size="sm">
                           View
                         </Button>
-                        <Button variant="ghost" size="sm">
-                          Receipt
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleGenerateReceipt(payment.id)}
+                        >
+                          <Receipt className="w-4 h-4" />
                         </Button>
                       </div>
                     </TableCell>

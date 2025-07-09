@@ -1,17 +1,37 @@
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomerStats } from "@/components/customers/CustomerStats";
 import { CustomerTable } from "@/components/customers/CustomerTable";
 import { CustomerFilters } from "@/components/customers/CustomerFilters";
-import { customers, filterCustomers } from "@/data/customerData";
+import { AddCustomerDialog } from "@/components/customers/AddCustomerDialog";
+import { useCustomers } from "@/hooks/useDataStore";
+import { Customer } from "@/data/globalData";
 
 const Customers = () => {
+  const customers = useCustomers();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedZone, setSelectedZone] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
+
+  const filterCustomers = (
+    customers: Customer[], 
+    searchTerm: string, 
+    selectedZone: string, 
+    selectedStatus: string
+  ) => {
+    return customers.filter(customer => {
+      const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           customer.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           customer.phone.includes(searchTerm) ||
+                           customer.meterId.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesZone = selectedZone === "all" || !selectedZone || customer.zone === selectedZone;
+      const matchesStatus = selectedStatus === "all" || !selectedStatus || customer.status === selectedStatus;
+      
+      return matchesSearch && matchesZone && matchesStatus;
+    });
+  };
 
   const filteredCustomers = filterCustomers(customers, searchTerm, selectedZone, selectedStatus);
 
@@ -25,10 +45,7 @@ const Customers = () => {
             Manage customer information, meter assignments, and billing details
           </p>
         </div>
-        <Button className="bg-gradient-primary shadow-medium">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Customer
-        </Button>
+        <AddCustomerDialog />
       </div>
 
       {/* Stats Cards */}

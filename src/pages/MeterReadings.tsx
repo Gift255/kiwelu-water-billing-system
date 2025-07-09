@@ -6,23 +6,35 @@ import { MeterReadingStats } from "@/components/meter-readings/MeterReadingStats
 import { MeterReadingTable } from "@/components/meter-readings/MeterReadingTable";
 import { MeterReadingFilters } from "@/components/meter-readings/MeterReadingFilters";
 import { AddReadingDialog } from "@/components/meter-readings/AddReadingDialog";
-import { readings as initialReadings, filterReadings, MeterReading } from "@/data/meterReadingData";
+import { BulkUploadDialog } from "@/components/meter-readings/BulkUploadDialog";
+import { useMeterReadings } from "@/hooks/useDataStore";
+import { MeterReading } from "@/data/globalData";
 
 const MeterReadings: React.FC = () => {
-  const [readings, setReadings] = useState<MeterReading[]>(initialReadings);
+  const readings = useMeterReadings();
   const [selectedZone, setSelectedZone] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedPeriod, setSelectedPeriod] = useState("current");
 
-  const filteredReadings = filterReadings(readings, selectedZone, selectedStatus, selectedPeriod);
-
-  const handleAddReading = (newReading: MeterReading) => {
-    setReadings(prev => [newReading, ...prev]);
+  const filterReadings = (
+    readings: MeterReading[],
+    selectedZone: string,
+    selectedStatus: string,
+    selectedPeriod: string
+  ) => {
+    return readings.filter(reading => {
+      const matchesZone = selectedZone === "all" || !selectedZone || reading.zone === selectedZone;
+      const matchesStatus = selectedStatus === "all" || !selectedStatus || reading.status === selectedStatus;
+      // For period filtering, you could add date range logic here
+      return matchesZone && matchesStatus;
+    });
   };
 
-  const handleBulkUpload = () => {
-    // In a real app, this would open a file upload dialog
-    console.log("Opening bulk upload dialog...");
+  const filteredReadings = filterReadings(readings, selectedZone, selectedStatus, selectedPeriod);
+
+  const handleBulkUpload = (newReadings: MeterReading[]) => {
+    // Readings are automatically added to the store via the dialog
+    console.log("Bulk upload completed:", newReadings.length, "readings");
   };
 
   return (
@@ -36,11 +48,8 @@ const MeterReadings: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleBulkUpload}>
-            <Upload className="w-4 h-4 mr-2" />
-            Bulk Upload
-          </Button>
-          <AddReadingDialog onAddReading={handleAddReading} />
+          <BulkUploadDialog onBulkUpload={handleBulkUpload} />
+          <AddReadingDialog />
         </div>
       </div>
 

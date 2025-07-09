@@ -1,41 +1,45 @@
-import { Phone } from "lucide-react";
+import { Users, UserCheck, UserX, UserMinus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-
-const stats = [
-  {
-    icon: Phone,
-    iconColor: "text-primary",
-    bgColor: "bg-primary/10",
-    value: "1,247",
-    label: "Total Customers"
-  },
-  {
-    icon: Phone,
-    iconColor: "text-success",
-    bgColor: "bg-success/10",
-    value: "1,198",
-    label: "Active"
-  },
-  {
-    icon: Phone,
-    iconColor: "text-warning",
-    bgColor: "bg-warning/10",
-    value: "37",
-    label: "Suspended"
-  },
-  {
-    icon: Phone,
-    iconColor: "text-muted-foreground",
-    bgColor: "bg-muted/50",
-    value: "12",
-    label: "Inactive"
-  }
-];
+import { useDataStore } from "@/hooks/useDataStore";
 
 export const CustomerStats = () => {
+  const dataStore = useDataStore();
+  const stats = dataStore.getCustomerStats();
+
+  const statCards = [
+    {
+      icon: Users,
+      iconColor: "text-primary",
+      bgColor: "bg-primary/10",
+      value: stats.total.toString(),
+      label: "Total Customers"
+    },
+    {
+      icon: UserCheck,
+      iconColor: "text-success",
+      bgColor: "bg-success/10",
+      value: stats.active.toString(),
+      label: "Active"
+    },
+    {
+      icon: UserX,
+      iconColor: "text-warning",
+      bgColor: "bg-warning/10",
+      value: stats.suspended.toString(),
+      label: "Suspended"
+    },
+    {
+      icon: UserMinus,
+      iconColor: "text-muted-foreground",
+      bgColor: "bg-muted/50",
+      value: stats.inactive.toString(),
+      label: "Inactive"
+    }
+  ];
+
   return (
     <div className="grid gap-4 md:grid-cols-4">
-      {stats.map((stat, index) => (
+      {statCards.map((stat, index) => (
         <Card key={index} className="shadow-soft">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">

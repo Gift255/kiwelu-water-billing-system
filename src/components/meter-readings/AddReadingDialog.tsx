@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Plus, Camera, MapPin } from "lucide-react";
+import { Plus, Camera, MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -18,46 +19,80 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { dataStore, MeterReading } from "@/data/globalData";
+import { useCustomers } from "@/hooks/useDataStore";
+import { toast } from "@/components/ui/sonner";
 
 interface AddReadingDialogProps {
-  onAddReading: (reading: any) => void;
+  onAddReading?: (reading: MeterReading) => void;
 }
 
 export const AddReadingDialog: React.FC<AddReadingDialogProps> = ({ onAddReading }) => {
+  const customers = useCustomers();
   const [open, setOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [customerSearch, setCustomerSearch] = useState("");
   const [formData, setFormData] = useState({
-    customerId: "",
-    meterId: "",
     currentReading: "",
     notes: "",
     collector: "Data Collector 1"
   });
 
+  const filteredCustomers = customers.filter(customer =>
+    customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+    customer.id.toLowerCase().includes(customerSearch.toLowerCase()) ||
+    customer.meterId.toLowerCase().includes(customerSearch.toLowerCase())
+  );
+
+  const getLastReading = (customerId: string): number => {
+    const readings = dataStore.getMeterReadings();
+    const customerReadings = readings.filter(r => r.customerId === customerId);
+    if (customerReadings.length === 0) return 0;
+    return Math.max(...customerReadings.map(r => r.currentReading));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // In a real app, this would make an API call
-    const newReading = {
+    if (!selectedCustomer || !formData.currentReading) {
+      toast.error("Please select a customer and enter current reading");
+      return;
+    }
+
+    const previousReading = getLastReading(selectedCustomer.id);
+    const currentReading = parseInt(formData.currentReading);
+    
+    if (currentReading < previousReading) {
+      toast.error("Current reading cannot be less than previous reading");
+      return;
+    }
+
+    const newReading: MeterReading = {
       id: `R${Date.now()}`,
-      customerId: formData.customerId,
-      customerName: "New Customer", // Would be fetched from customer data
-      meterId: formData.meterId,
-      previousReading: 1000, // Would be fetched from last reading
+      customerId: selectedCustomer.id,
+      customerName: selectedCustomer.name,
+      meterId: selectedCustomer.meterId,
+      previousReading,
       currentReading: parseInt(formData.currentReading),
-      consumption: parseInt(formData.currentReading) - 1000,
+      consumption: currentReading - previousReading,
       readingDate: new Date().toISOString().split('T')[0],
       collector: formData.collector,
-      zone: "Zone A", // Would be determined from customer data
+      zone: selectedCustomer.zone,
       status: "pending" as const,
       notes: formData.notes,
-      photoUrl: "https://images.pexels.com/photos/1108572/pexels-photo-1108572.jpeg?auto=compress&cs=tinysrgb&w=100&h=80"
+      photoUrl: "https://images.pexels.com/photos/1108572/pexels-photo-1108572.jpeg?auto=compress&cs=tinysrgb&w=100&h=80",
+      gpsLocation: selectedCustomer.gpsLocation
     };
 
-    onAddReading(newReading);
+    dataStore.addMeterReading(newReading);
+    if (onAddReading) onAddReading(newReading);
+    
+    toast.success(`Reading added for ${selectedCustomer.name}`);
+    
     setOpen(false);
+    setSelectedCustomer(null);
+    setCustomerSearch("");
     setFormData({
-      customerId: "",
-      meterId: "",
       currentReading: "",
       notes: "",
       collector: "Data Collector 1"
@@ -78,25 +113,42 @@ export const AddReadingDialog: React.FC<AddReadingDialogProps> = ({ onAddReading
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="customerId">Customer ID</Label>
+            <Label>Search Customer</Label>
             <Input
-              id="customerId"
-              value={formData.customerId}
-              onChange={(e) => setFormData(prev => ({ ...prev, customerId: e.target.value }))}
-              placeholder="C001"
-              required
+              placeholder="Search by name, ID, or meter ID..."
+              value={customerSearch}
+              onChange={(e) => setCustomerSearch(e.target.value)}
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="meterId">Meter ID</Label>
-            <Input
-              id="meterId"
-              value={formData.meterId}
-              onChange={(e) => setFormData(prev => ({ ...prev, meterId: e.target.value }))}
-              placeholder="M001234"
-              required
-            />
+            {customerSearch && (
+              <div className="max-h-32 overflow-y-auto border rounded-md">
+                {filteredCustomers.map(customer => (
+                  <div
+                    key={customer.id}
+                    className="p-2 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                    onClick={() => {
+                      setSelectedCustomer(customer);
+                      setCustomerSearch("");
+                    }}
+                  >
+                    <div className="font-medium">{customer.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {customer.id} • {customer.meterId} • {customer.zone}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {selectedCustomer && (
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <div className="font-medium">{selectedCustomer.name}</div>
+                <div className="text-sm text-muted-foreground">
+                  {selectedCustomer.id} • {selectedCustomer.meterId}
+                </div>
+                <div className="text-sm">
+                  <Badge variant="outline">Last Reading: {getLastReading(selectedCustomer.id)} m³</Badge>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">

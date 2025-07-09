@@ -1,5 +1,4 @@
-import { Calculator, FileText, AlertCircle, CheckCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { FileText, AlertCircle, CheckCircle, Calculator } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -11,8 +10,18 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
+import { GenerateBillsDialog } from "@/components/billing/GenerateBillsDialog";
+import { useDataStore, useInvoices, useMeterReadings } from "@/hooks/useDataStore";
 
 const Billing = () => {
+  const dataStore = useDataStore();
+  const invoices = useInvoices();
+  const readings = useMeterReadings();
+  
+  const invoiceStats = dataStore.getInvoiceStats();
+  const readingStats = dataStore.getReadingStats();
+  const totalAmount = invoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Page Header */}
@@ -23,10 +32,7 @@ const Billing = () => {
             Generate and manage monthly water bills for customers
           </p>
         </div>
-        <Button className="bg-gradient-primary shadow-medium">
-          <Calculator className="w-4 h-4 mr-2" />
-          Generate Bills
-        </Button>
+        <GenerateBillsDialog />
       </div>
 
       {/* Billing Status Cards */}
@@ -38,7 +44,7 @@ const Billing = () => {
                 <FileText className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">1,247</p>
+                <p className="text-2xl font-bold">{invoiceStats.total}</p>
                 <p className="text-sm text-muted-foreground">Total Bills</p>
               </div>
             </div>
@@ -52,7 +58,7 @@ const Billing = () => {
                 <CheckCircle className="w-6 h-6 text-success" />
               </div>
               <div>
-                <p className="text-2xl font-bold">1,089</p>
+                <p className="text-2xl font-bold">{invoiceStats.paid}</p>
                 <p className="text-sm text-muted-foreground">Generated</p>
               </div>
             </div>
@@ -66,7 +72,7 @@ const Billing = () => {
                 <AlertCircle className="w-6 h-6 text-warning" />
               </div>
               <div>
-                <p className="text-2xl font-bold">158</p>
+                <p className="text-2xl font-bold">{invoiceStats.pending}</p>
                 <p className="text-sm text-muted-foreground">Pending</p>
               </div>
             </div>
@@ -80,7 +86,7 @@ const Billing = () => {
                 <Calculator className="w-6 h-6 text-info" />
               </div>
               <div>
-                <p className="text-2xl font-bold">TZS 178M</p>
+                <p className="text-2xl font-bold">TZS {Math.round(totalAmount / 1000)}K</p>
                 <p className="text-sm text-muted-foreground">Total Amount</p>
               </div>
             </div>
@@ -91,17 +97,23 @@ const Billing = () => {
       {/* Billing Progress */}
       <Card className="shadow-soft">
         <CardHeader>
-          <CardTitle>June 2025 Billing Progress</CardTitle>
+          <CardTitle>{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Billing Progress</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="flex justify-between text-sm">
               <span>Bills Generated</span>
-              <span className="font-medium">1,089 / 1,247 (87%)</span>
+              <span className="font-medium">
+                {invoiceStats.total} / {readingStats.validated} 
+                ({readingStats.validated > 0 ? Math.round((invoiceStats.total / readingStats.validated) * 100) : 0}%)
+              </span>
             </div>
-            <Progress value={87} className="h-3" />
+            <Progress 
+              value={readingStats.validated > 0 ? (invoiceStats.total / readingStats.validated) * 100 : 0} 
+              className="h-3" 
+            />
             <div className="text-xs text-muted-foreground">
-              158 customers pending meter readings
+              {readingStats.pending} readings pending validation
             </div>
           </div>
         </CardContent>
@@ -171,42 +183,28 @@ const Billing = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow>
-                <TableCell>INV-2025-001234</TableCell>
-                <TableCell>
-                  <div>
-                    <div className="font-medium">John Doe</div>
-                    <div className="text-sm text-muted-foreground">C001</div>
-                  </div>
-                </TableCell>
-                <TableCell>25 m³</TableCell>
-                <TableCell className="font-medium">TZS 22,000</TableCell>
-                <TableCell>2025-07-15</TableCell>
-                <TableCell>
-                  <Badge className="bg-success/10 text-success">Generated</Badge>
-                </TableCell>
-                <TableCell>
-                  <Button variant="ghost" size="sm">View</Button>
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>INV-2025-001235</TableCell>
-                <TableCell>
-                  <div>
-                    <div className="font-medium">Sarah Johnson</div>
-                    <div className="text-sm text-muted-foreground">C002</div>
-                  </div>
-                </TableCell>
-                <TableCell>35 m³</TableCell>
-                <TableCell className="font-medium">TZS 35,000</TableCell>
-                <TableCell>2025-07-15</TableCell>
-                <TableCell>
-                  <Badge className="bg-success/10 text-success">Generated</Badge>
-                </TableCell>
-                <TableCell>
-                  <Button variant="ghost" size="sm">View</Button>
-                </TableCell>
-              </TableRow>
+              {invoices.slice(0, 5).map((invoice) => (
+                <TableRow key={invoice.id}>
+                  <TableCell>{invoice.id}</TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{invoice.customerName}</div>
+                      <div className="text-sm text-muted-foreground">{invoice.customerId}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell>{invoice.consumption} m³</TableCell>
+                  <TableCell className="font-medium">TZS {invoice.totalAmount.toLocaleString()}</TableCell>
+                  <TableCell>{invoice.dueDate}</TableCell>
+                  <TableCell>
+                    <Badge className="bg-success/10 text-success">
+                      {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm">View</Button>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </CardContent>
