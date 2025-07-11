@@ -19,12 +19,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useDataStore, useInvoices } from "@/hooks/useDataStore";
+import { PaymentStatusDialog } from "@/components/payments/PaymentStatusDialog";
+import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { toast } from "@/components/ui/sonner";
 
 const Invoices = () => {
   const dataStore = useDataStore();
   const invoices = useInvoices();
+  const { hasPermission } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState("all");
   const [selectedPeriod, setSelectedPeriod] = useState("current");
@@ -75,6 +78,8 @@ const Invoices = () => {
         return <Badge className="bg-warning/10 text-warning">Pending</Badge>;
       case "overdue":
         return <Badge className="bg-destructive/10 text-destructive">Overdue</Badge>;
+      case "partial":
+        return <Badge className="bg-info/10 text-info">Partial</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -276,6 +281,9 @@ const Invoices = () => {
                         >
                           <Printer className="w-4 h-4" />
                         </Button>
+                        {hasPermission('payments') && (
+                          <PaymentStatusDialog invoice={invoice} />
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

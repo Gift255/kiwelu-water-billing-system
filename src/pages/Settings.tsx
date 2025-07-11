@@ -13,8 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { UserManagement } from "@/components/auth/UserManagement";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Settings = () => {
+  const { hasPermission } = useAuth();
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Page Header */}
@@ -30,6 +34,11 @@ const Settings = () => {
           Save Changes
         </Button>
       </div>
+
+      {/* User Management - Admin Only */}
+      {hasPermission('all') && (
+        <UserManagement />
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Billing Configuration */}

@@ -11,8 +11,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function AppHeader() {
+  const { user, logout } = useAuth();
+
   return (
     <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="flex items-center justify-between px-4 h-full">
@@ -70,8 +73,8 @@ export function AppHeader() {
                   <User className="w-4 h-4 text-primary" />
                 </div>
                 <div className="text-left hidden md:block">
-                  <div className="text-sm font-medium">Admin User</div>
-                  <div className="text-xs text-muted-foreground">Administrator</div>
+                  <div className="text-sm font-medium">{user?.name}</div>
+                  <div className="text-xs text-muted-foreground">{user?.role.replace('_', ' ').toUpperCase()}</div>
                 </div>
               </Button>
             </DropdownMenuTrigger>
@@ -82,7 +85,9 @@ export function AppHeader() {
               <DropdownMenuItem>Settings</DropdownMenuItem>
               <DropdownMenuItem>Help & Support</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">Logout</DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive" onClick={logout}>
+                Logout
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

@@ -12,6 +12,7 @@ import {
   Bell
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 import {
   Sidebar,
@@ -29,32 +30,30 @@ interface SidebarItem {
   title: string;
   url: string;
   icon: any;
-  roles: string[];
+  permission: string;
 }
 
 const navigationItems: SidebarItem[] = [
-  { title: "Dashboard", url: "/", icon: Home, roles: ["admin", "collector", "accountant"] },
-  { title: "Customers", url: "/customers", icon: Users, roles: ["admin", "collector"] },
-  { title: "Meter Readings", url: "/readings", icon: Gauge, roles: ["admin", "collector"] },
-  { title: "Billing", url: "/billing", icon: Calculator, roles: ["admin", "accountant"] },
-  { title: "Invoices", url: "/invoices", icon: FileText, roles: ["admin", "accountant"] },
-  { title: "Payments", url: "/payments", icon: DollarSign, roles: ["admin", "accountant"] },
-  { title: "Reports", url: "/reports", icon: BarChart3, roles: ["admin", "accountant"] },
-  { title: "Notifications", url: "/notifications", icon: Bell, roles: ["admin"] },
-  { title: "Settings", url: "/settings", icon: Settings, roles: ["admin"] },
+  { title: "Dashboard", url: "/", icon: Home, permission: "all" },
+  { title: "Customers", url: "/customers", icon: Users, permission: "customers_view" },
+  { title: "Meter Readings", url: "/readings", icon: Gauge, permission: "readings" },
+  { title: "Billing", url: "/billing", icon: Calculator, permission: "billing" },
+  { title: "Invoices", url: "/invoices", icon: FileText, permission: "invoices" },
+  { title: "Payments", url: "/payments", icon: DollarSign, permission: "payments" },
+  { title: "Reports", url: "/reports", icon: BarChart3, permission: "reports" },
+  { title: "Notifications", url: "/notifications", icon: Bell, permission: "all" },
+  { title: "Settings", url: "/settings", icon: Settings, permission: "all" },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
+  const { hasPermission, user } = useAuth();
   const location = useLocation();
   const currentPath = location.pathname;
   const collapsed = state === "collapsed";
   
-  // Mock user role - in real app this would come from auth context
-  const userRole = "admin";
-  
   const filteredItems = navigationItems.filter(item => 
-    item.roles.includes(userRole)
+    hasPermission(item.permission)
   );
 
   const isActive = (path: string) => {
@@ -130,8 +129,8 @@ export function AppSidebar() {
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">Admin User</p>
-              <p className="text-xs text-muted-foreground">Administrator</p>
+              <p className="text-sm font-medium truncate">{user?.name}</p>
+              <p className="text-xs text-muted-foreground">{user?.role.replace('_', ' ').toUpperCase()}</p>
             </div>
           )}
         </div>
