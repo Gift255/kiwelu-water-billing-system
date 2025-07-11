@@ -128,7 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     const permissions = {
       admin: ['all'],
-      accountant: ['billing', 'payments', 'invoices', 'reports', 'customers_view'],
+      accountant: ['billing', 'payments', 'invoices', 'reports', 'customers_view', 'approve_readings'],
       meter_reader: ['readings', 'customers_view']
     };
     

@@ -37,7 +37,7 @@ export const GenerateBillsDialog = () => {
   } | null>(null);
 
   const getValidatedReadings = () => {
-    return readings.filter(r => r.status === 'validated');
+    return readings.filter(r => r.status === 'approved');
   };
 
   const getCustomersWithReadings = () => {

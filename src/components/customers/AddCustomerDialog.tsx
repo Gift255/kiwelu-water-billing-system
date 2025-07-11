@@ -20,8 +20,10 @@ import {
 } from "@/components/ui/select";
 import { dataStore, Customer } from "@/data/globalData";
 import { toast } from "@/components/ui/sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const AddCustomerDialog = () => {
+  const { hasPermission } = useAuth();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -88,7 +90,11 @@ export const AddCustomerDialog = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-gradient-primary shadow-medium">
+        <Button 
+          className="bg-gradient-primary shadow-medium"
+          disabled={!hasPermission('all')}
+          title={hasPermission('all') ? "Add Customer" : "Only admins can add customers"}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Add Customer
         </Button>

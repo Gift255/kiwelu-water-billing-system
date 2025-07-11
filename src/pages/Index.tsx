@@ -44,7 +44,7 @@ const Index = () => {
         />
         <StatsCard
           title="Water Consumption"
-          value={`${readingStats.total} readings`}
+          value={`${readingStats.approved} approved`}
           change="+8.1%"
           changeType="positive"
           description="this month"

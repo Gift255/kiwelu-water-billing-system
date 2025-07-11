@@ -54,8 +54,9 @@ export const MeterReadingFilters: React.FC<MeterReadingFiltersProps> = ({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Status</SelectItem>
-          <SelectItem value="validated">Validated</SelectItem>
+          <SelectItem value="approved">Approved</SelectItem>
           <SelectItem value="pending">Pending</SelectItem>
+          <SelectItem value="rejected">Rejected</SelectItem>
           <SelectItem value="flagged">Flagged</SelectItem>
         </SelectContent>
       </Select>

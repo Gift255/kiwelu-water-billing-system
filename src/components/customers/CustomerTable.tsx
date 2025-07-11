@@ -11,12 +11,15 @@ import {
 } from "@/components/ui/table";
 import { Customer, getCustomerStatusBadgeVariant, getBalanceColor, dataStore } from "@/data/globalData";
 import { toast } from "@/components/ui/sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface CustomerTableProps {
   customers: Customer[];
 }
 
 export const CustomerTable: React.FC<CustomerTableProps> = ({ customers }) => {
+  const { hasPermission } = useAuth();
+
   const getStatusBadge = (status: string) => {
     const variant = getCustomerStatusBadgeVariant(status);
     const variantClasses = {
@@ -102,6 +105,8 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({ customers }) => {
                     variant="ghost" 
                     size="sm"
                     onClick={() => handleEditCustomer(customer.id)}
+                    disabled={!hasPermission('all')}
+                    title={hasPermission('all') ? "Edit Customer" : "Only admins can edit customers"}
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
@@ -110,6 +115,8 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({ customers }) => {
                     size="sm"
                     onClick={() => handleDeleteCustomer(customer.id, customer.name)}
                     className="text-destructive hover:text-destructive"
+                    disabled={!hasPermission('all')}
+                    title={hasPermission('all') ? "Delete Customer" : "Only admins can delete customers"}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>

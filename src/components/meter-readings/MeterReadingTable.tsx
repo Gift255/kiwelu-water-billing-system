@@ -16,40 +16,32 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { MeterReading, getStatusBadgeVariant, getConsumptionColor } from "@/data/meterReadingData";
+import { MeterReading, getConsumptionColor } from "@/data/meterReadingData";
+import { MeterReadingApprovalDialog } from "./MeterReadingApprovalDialog";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MeterReadingTableProps {
   readings: MeterReading[];
 }
 
 export const MeterReadingTable: React.FC<MeterReadingTableProps> = ({ readings }) => {
+  const { hasPermission } = useAuth();
+
   const getStatusBadge = (status: string) => {
-    const variant = getStatusBadgeVariant(status);
-    const variantClasses = {
-      success: "bg-success/10 text-success",
-      warning: "bg-warning/10 text-warning",
-      destructive: "bg-destructive/10 text-destructive",
-      secondary: ""
-    };
-    
-    if (variant === "secondary") {
-      return <Badge variant="secondary">{status}</Badge>;
+    switch (status) {
+      case "approved":
+        return <Badge className="bg-success/10 text-success">Approved</Badge>;
+      case "pending":
+        return <Badge className="bg-warning/10 text-warning">Pending Approval</Badge>;
+      case "rejected":
+        return <Badge className="bg-destructive/10 text-destructive">Rejected</Badge>;
+      case "flagged":
+        return <Badge className="bg-destructive/10 text-destructive">Flagged</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
     }
-    
-    return <Badge className={variantClasses[variant as keyof typeof variantClasses]}>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </Badge>;
   };
 
-  const handleValidateReading = (readingId: string) => {
-    // In a real app, this would make an API call
-    console.log(`Validating reading ${readingId}`);
-  };
-
-  const handleFlagReading = (readingId: string) => {
-    // In a real app, this would make an API call
-    console.log(`Flagging reading ${readingId}`);
-  };
 
   return (
     <div className="rounded-md border">
@@ -131,33 +123,17 @@ export const MeterReadingTable: React.FC<MeterReadingTableProps> = ({ readings }
                     </Button>
                   )}
 
-                  {/* Validate/Flag Actions */}
-                  {reading.status === 'pending' && (
-                    <>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        title="Validate Reading"
-                        onClick={() => handleValidateReading(reading.id)}
-                        className="text-success hover:text-success"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        title="Flag Reading"
-                        onClick={() => handleFlagReading(reading.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <AlertTriangle className="w-4 h-4" />
-                      </Button>
-                    </>
+                  {/* Approval Actions - Only for Admin/Accountant */}
+                  {(hasPermission('billing') || hasPermission('all')) && reading.status === 'pending' && (
+                    <MeterReadingApprovalDialog reading={reading} />
                   )}
 
-                  <Button variant="ghost" size="sm" title="Edit Reading">
-                    <Edit className="w-4 h-4" />
-                  </Button>
+                  {/* Edit only for meter readers on their own readings */}
+                  {hasPermission('readings') && reading.status === 'pending' && (
+                    <Button variant="ghost" size="sm" title="Edit Reading">
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
               </TableCell>
             </TableRow>

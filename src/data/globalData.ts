@@ -28,7 +28,10 @@ export interface MeterReading {
   readingDate: string;
   collector: string;
   zone: string;
-  status: 'validated' | 'pending' | 'flagged';
+  status: 'pending' | 'approved' | 'rejected' | 'flagged';
+  approvedBy?: string;
+  approvedDate?: string;
+  rejectionReason?: string;
   photoUrl?: string;
   notes?: string;
   gpsLocation?: string;
@@ -517,11 +520,12 @@ class DataStore {
 
   getReadingStats() {
     const total = this.meterReadings.length;
-    const validated = this.meterReadings.filter(r => r.status === 'validated').length;
+    const approved = this.meterReadings.filter(r => r.status === 'approved').length;
     const pending = this.meterReadings.filter(r => r.status === 'pending').length;
+    const rejected = this.meterReadings.filter(r => r.status === 'rejected').length;
     const flagged = this.meterReadings.filter(r => r.status === 'flagged').length;
     
-    return { total, validated, pending, flagged };
+    return { total, approved, pending, rejected, flagged };
   }
 
   getInvoiceStats() {
