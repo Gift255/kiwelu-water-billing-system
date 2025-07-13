@@ -22,7 +22,7 @@ import { dataStore } from "@/data/globalData";
 import { useCustomers, useMeterReadings } from "@/hooks/useDataStore";
 import { toast } from "@/components/ui/sonner";
 
-export const GenerateBillsDialog = () => {
+export const GenerateInvoicesDialog = () => {
   const customers = useCustomers();
   const readings = useMeterReadings();
   const [open, setOpen] = useState(false);
@@ -36,32 +36,32 @@ export const GenerateBillsDialog = () => {
     errors: string[];
   } | null>(null);
 
-  const getValidatedReadings = () => {
+  const getApprovedReadings = () => {
     return readings.filter(r => r.status === 'approved');
   };
 
   const getCustomersWithReadings = () => {
-    const validatedReadings = getValidatedReadings();
+    const approvedReadings = getApprovedReadings();
     const customersWithReadings = customers.filter(customer => 
-      validatedReadings.some(reading => reading.customerId === customer.id) &&
+      approvedReadings.some(reading => reading.customerId === customer.id) &&
       (selectedZone === "all" || customer.zone === selectedZone)
     );
     return customersWithReadings;
   };
 
-  const handleGenerateBills = async () => {
+  const handleGenerateInvoices = async () => {
     setGenerating(true);
     setProgress(0);
     
     const customersToProcess = getCustomersWithReadings();
-    const validatedReadings = getValidatedReadings();
+    const approvedReadings = getApprovedReadings();
     const errors: string[] = [];
     let successful = 0;
 
-    // Simulate bill generation process
+    // Simulate invoice generation process
     for (let i = 0; i < customersToProcess.length; i++) {
       const customer = customersToProcess[i];
-      const customerReading = validatedReadings.find(r => r.customerId === customer.id);
+      const customerReading = approvedReadings.find(r => r.customerId === customer.id);
       
       if (customerReading) {
         try {
@@ -74,7 +74,7 @@ export const GenerateBillsDialog = () => {
             id: `SMS-${Date.now()}-${i}`,
             recipient: customer.phone,
             customerId: customer.id,
-            message: `Your water bill for ${invoice.billingPeriod} is TZS ${invoice.totalAmount.toLocaleString()}. Due date: ${invoice.dueDate}.`,
+            message: `Your water invoice for ${invoice.billingPeriod} is TZS ${invoice.totalAmount.toLocaleString()}. Due date: ${invoice.dueDate}.`,
             type: 'billing' as const,
             status: 'delivered' as const,
             sentDate: new Date().toISOString(),
@@ -84,10 +84,10 @@ export const GenerateBillsDialog = () => {
           
           successful++;
         } catch (error) {
-          errors.push(`${customer.name}: Failed to generate bill`);
+          errors.push(`${customer.name}: Failed to generate invoice`);
         }
       } else {
-        errors.push(`${customer.name}: No validated reading found`);
+        errors.push(`${customer.name}: No approved reading found`);
       }
       
       setProgress(((i + 1) / customersToProcess.length) * 100);
@@ -106,7 +106,7 @@ export const GenerateBillsDialog = () => {
     setGenerating(false);
     
     if (successful > 0) {
-      toast.success(`Successfully generated ${successful} bills`);
+      toast.success(`Successfully generated ${successful} invoices`);
     }
   };
 
@@ -124,14 +124,14 @@ export const GenerateBillsDialog = () => {
       <DialogTrigger asChild>
         <Button className="bg-gradient-primary shadow-medium">
           <Calculator className="w-4 h-4 mr-2" />
-          Generate Bills
+          Generate Invoices
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-primary" />
-            Generate Monthly Bills
+            Generate Monthly Invoices
           </DialogTitle>
         </DialogHeader>
         
@@ -154,10 +154,10 @@ export const GenerateBillsDialog = () => {
               </div>
 
               <div className="p-4 bg-muted/50 rounded-lg">
-                <div className="text-sm font-medium mb-2">Bill Generation Summary:</div>
+                <div className="text-sm font-medium mb-2">Invoice Generation Summary:</div>
                 <div className="space-y-1 text-sm">
-                  <div>Customers with validated readings: {customersWithReadings.length}</div>
-                  <div>Billing period: {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</div>
+                  <div>Customers with approved readings: {customersWithReadings.length}</div>
+                  <div>Invoice period: {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</div>
                   <div>Estimated SMS cost: TZS {(customersWithReadings.length * 150).toLocaleString()}</div>
                 </div>
               </div>
@@ -165,7 +165,7 @@ export const GenerateBillsDialog = () => {
               {generating && (
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>Generating bills...</span>
+                    <span>Generating invoices...</span>
                     <span>{Math.round(progress)}%</span>
                   </div>
                   <Progress value={progress} />
@@ -207,7 +207,7 @@ export const GenerateBillsDialog = () => {
               <div className="flex items-center gap-2 p-3 bg-success/10 rounded-lg">
                 <CheckCircle className="w-4 h-4 text-success" />
                 <span className="text-sm text-success">
-                  {results.successful} bills generated and SMS notifications sent
+                  {results.successful} invoices generated and SMS notifications sent
                 </span>
               </div>
             </div>
@@ -224,11 +224,11 @@ export const GenerateBillsDialog = () => {
             </Button>
             {!results ? (
               <Button 
-                onClick={handleGenerateBills} 
+                onClick={handleGenerateInvoices} 
                 disabled={customersWithReadings.length === 0 || generating}
                 className="flex-1 bg-gradient-primary"
               >
-                {generating ? "Generating..." : `Generate ${customersWithReadings.length} Bills`}
+                {generating ? "Generating..." : `Generate ${customersWithReadings.length} Invoices`}
               </Button>
             ) : (
               <Button 

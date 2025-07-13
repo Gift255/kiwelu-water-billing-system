@@ -26,7 +26,7 @@ import { AddPaymentDialog } from "@/components/payments/AddPaymentDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/sonner";
 
-const BillingInvoices = () => {
+const Invoices = () => {
   const dataStore = useDataStore();
   const invoices = useInvoices();
   const payments = usePayments();
@@ -174,7 +174,7 @@ const BillingInvoices = () => {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Billing & Payments</h1>
+          <h1 className="text-3xl font-bold text-foreground">Invoices & Payments</h1>
           <p className="text-muted-foreground">
             Manage invoices and payment records in one place
           </p>
@@ -476,4 +476,4 @@ const BillingInvoices = () => {
   );
 };
 
-export default BillingInvoices;
+export default Invoices;

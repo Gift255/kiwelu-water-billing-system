@@ -10,10 +10,10 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { GenerateBillsDialog } from "@/components/billing/GenerateBillsDialog";
+import { GenerateInvoicesDialog } from "@/components/invoices/GenerateInvoicesDialog";
 import { useDataStore, useInvoices, useMeterReadings } from "@/hooks/useDataStore";
 
-const Billing = () => {
+const InvoiceGeneration = () => {
   const dataStore = useDataStore();
   const invoices = useInvoices();
   const readings = useMeterReadings();
@@ -27,15 +27,15 @@ const Billing = () => {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Billing Management</h1>
+          <h1 className="text-3xl font-bold text-foreground">Invoice Generation</h1>
           <p className="text-muted-foreground">
-            Generate and manage monthly water bills for customers
+            Generate and manage monthly water invoices for customers
           </p>
         </div>
-        <GenerateBillsDialog />
+        <GenerateInvoicesDialog />
       </div>
 
-      {/* Billing Status Cards */}
+      {/* Invoice Status Cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="shadow-soft">
           <CardContent className="p-6">
@@ -45,7 +45,7 @@ const Billing = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold">{invoiceStats.total}</p>
-                <p className="text-sm text-muted-foreground">Total Bills</p>
+                <p className="text-sm text-muted-foreground">Total Invoices</p>
               </div>
             </div>
           </CardContent>
@@ -94,22 +94,22 @@ const Billing = () => {
         </Card>
       </div>
 
-      {/* Billing Progress */}
+      {/* Invoice Progress */}
       <Card className="shadow-soft">
         <CardHeader>
-          <CardTitle>{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Billing Progress</CardTitle>
+          <CardTitle>{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Invoice Progress</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="flex justify-between text-sm">
-              <span>Bills Generated</span>
+              <span>Invoices Generated</span>
               <span className="font-medium">
-                {invoiceStats.total} / {readingStats.validated} 
-                ({readingStats.validated > 0 ? Math.round((invoiceStats.total / readingStats.validated) * 100) : 0}%)
+                {invoiceStats.total} / {readingStats.approved} 
+                ({readingStats.approved > 0 ? Math.round((invoiceStats.total / readingStats.approved) * 100) : 0}%)
               </span>
             </div>
             <Progress 
-              value={readingStats.validated > 0 ? (invoiceStats.total / readingStats.validated) * 100 : 0} 
+              value={readingStats.approved > 0 ? (invoiceStats.total / readingStats.approved) * 100 : 0} 
               className="h-3" 
             />
             <div className="text-xs text-muted-foreground">
@@ -119,7 +119,7 @@ const Billing = () => {
         </CardContent>
       </Card>
 
-      {/* Billing Rate Structure */}
+      {/* Invoice Rate Structure */}
       <Card className="shadow-soft">
         <CardHeader>
           <CardTitle>Current Rate Structure</CardTitle>
@@ -127,7 +127,7 @@ const Billing = () => {
         <CardContent>
           <div className="space-y-4">
             <div className="text-sm text-muted-foreground mb-4">
-              Tiered billing rates effective from April 2025
+              Tiered invoice rates effective from April 2025
             </div>
             <Table>
               <TableHeader>
@@ -164,10 +164,10 @@ const Billing = () => {
         </CardContent>
       </Card>
 
-      {/* Recent Bills Generated */}
+      {/* Recent Invoices Generated */}
       <Card className="shadow-soft">
         <CardHeader>
-          <CardTitle>Recently Generated Bills</CardTitle>
+          <CardTitle>Recently Generated Invoices</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -201,7 +201,7 @@ const Billing = () => {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="sm">View</Button>
+                    <button className="text-sm text-primary hover:underline">View</button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -213,4 +213,4 @@ const Billing = () => {
   );
 };
 
-export default Billing;
+export default InvoiceGeneration;

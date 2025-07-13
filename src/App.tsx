@@ -11,8 +11,8 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import Index from "./pages/Index";
 import Customers from "./pages/Customers";
 import MeterReadings from "./pages/MeterReadings";
-import Billing from "./pages/Billing";
-import BillingInvoices from "./pages/BillingInvoices";
+import InvoiceGeneration from "./pages/InvoiceGeneration";
+import Invoices from "./pages/Invoices";
 import Reports from "./pages/Reports";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
@@ -39,9 +39,9 @@ const AppContent = () => {
                 <Route path="/" element={<Index />} />
                 <Route path="/customers" element={<Customers />} />
                 <Route path="/readings" element={<MeterReadings />} />
-                <Route path="/billing" element={<Billing />} />
-                <Route path="/invoices" element={<BillingInvoices />} />
-                <Route path="/payments" element={<BillingInvoices />} />
+                <Route path="/invoice-generation" element={<InvoiceGeneration />} />
+                <Route path="/invoices" element={<Invoices />} />
+                <Route path="/payments" element={<Invoices />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/settings" element={<Settings />} />
