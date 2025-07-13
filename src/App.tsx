@@ -12,8 +12,7 @@ import Index from "./pages/Index";
 import Customers from "./pages/Customers";
 import MeterReadings from "./pages/MeterReadings";
 import Billing from "./pages/Billing";
-import Invoices from "./pages/Invoices";
-import Payments from "./pages/Payments";
+import BillingInvoices from "./pages/BillingInvoices";
 import Reports from "./pages/Reports";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
@@ -41,8 +40,8 @@ const AppContent = () => {
                 <Route path="/customers" element={<Customers />} />
                 <Route path="/readings" element={<MeterReadings />} />
                 <Route path="/billing" element={<Billing />} />
-                <Route path="/invoices" element={<Invoices />} />
-                <Route path="/payments" element={<Payments />} />
+                <Route path="/invoices" element={<BillingInvoices />} />
+                <Route path="/payments" element={<BillingInvoices />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/settings" element={<Settings />} />
