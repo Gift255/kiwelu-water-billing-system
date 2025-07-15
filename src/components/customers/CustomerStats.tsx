@@ -1,41 +1,55 @@
 import { Users, UserCheck, UserX, UserMinus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { useDataStore } from "@/hooks/useDataStore";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCustomerStats } from "@/hooks/useApiData";
 
 export const CustomerStats = () => {
-  const dataStore = useDataStore();
-  const stats = dataStore.getCustomerStats();
+  const { data: stats, loading } = useCustomerStats();
 
   const statCards = [
     {
       icon: Users,
       iconColor: "text-primary",
       bgColor: "bg-primary/10",
-      value: stats.total.toString(),
+      value: stats?.total?.toString() || '0',
       label: "Total Customers"
     },
     {
       icon: UserCheck,
       iconColor: "text-success",
       bgColor: "bg-success/10",
-      value: stats.active.toString(),
+      value: stats?.active?.toString() || '0',
       label: "Active"
     },
     {
       icon: UserX,
       iconColor: "text-warning",
       bgColor: "bg-warning/10",
-      value: stats.suspended.toString(),
+      value: stats?.suspended?.toString() || '0',
       label: "Suspended"
     },
     {
       icon: UserMinus,
       iconColor: "text-muted-foreground",
       bgColor: "bg-muted/50",
-      value: stats.inactive.toString(),
+      value: stats?.inactive?.toString() || '0',
       label: "Inactive"
     }
   ];
+
+  if (loading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-4">
+        {[...Array(4)].map((_, index) => (
+          <Card key={index} className="shadow-soft">
+            <CardContent className="p-6">
+              <Skeleton className="h-16 w-full" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4 md:grid-cols-4">

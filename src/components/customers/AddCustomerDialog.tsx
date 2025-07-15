@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, User, Phone, Mail, MapPin } from "lucide-react";
+import { Plus, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,73 +18,48 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { dataStore, Customer } from "@/data/globalData";
-import { toast } from "@/components/ui/sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCustomerMutations } from "@/hooks/useApiData";
 
-export const AddCustomerDialog = () => {
+interface AddCustomerDialogProps {
+  onSuccess: () => void;
+}
+
+export const AddCustomerDialog: React.FC<AddCustomerDialogProps> = ({ onSuccess }) => {
   const { hasPermission } = useAuth();
+  const { createCustomer, loading } = useCustomerMutations();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     email: "",
     address: "",
-    zone: "",
-    connectionType: "residential" as "residential" | "commercial" | "industrial"
+    zone_id: "",
+    connection_type: "residential" as "residential" | "commercial" | "industrial"
   });
 
-  const generateCustomerId = () => {
-    const customers = dataStore.getCustomers();
-    const lastId = customers.length > 0 ? 
-      Math.max(...customers.map(c => parseInt(c.id.substring(1)))) : 0;
-    return `C${String(lastId + 1).padStart(3, '0')}`;
-  };
-
-  const generateMeterId = () => {
-    const customers = dataStore.getCustomers();
-    const lastMeterId = customers.length > 0 ? 
-      Math.max(...customers.map(c => parseInt(c.meterId.substring(1)))) : 1233;
-    return `M${String(lastMeterId + 1).padStart(6, '0')}`;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.phone || !formData.address || !formData.zone) {
-      toast.error("Please fill in all required fields");
+    if (!formData.name || !formData.phone || !formData.address || !formData.zone_id) {
       return;
     }
 
-    const newCustomer: Customer = {
-      id: generateCustomerId(),
-      name: formData.name,
-      phone: formData.phone,
-      email: formData.email,
-      address: formData.address,
-      meterId: generateMeterId(),
-      status: "active",
-      zone: formData.zone,
-      balance: 0,
-      lastReading: "Never",
-      gpsLocation: "",
-      registrationDate: new Date().toISOString().split('T')[0],
-      connectionType: formData.connectionType
-    };
-
-    dataStore.addCustomer(newCustomer);
-    
-    toast.success(`Customer ${newCustomer.name} added successfully!`);
-    
-    setOpen(false);
-    setFormData({
-      name: "",
-      phone: "",
-      email: "",
-      address: "",
-      zone: "",
-      connectionType: "residential"
-    });
+    try {
+      await createCustomer(formData);
+      setOpen(false);
+      setFormData({
+        name: "",
+        phone: "",
+        email: "",
+        address: "",
+        zone_id: "",
+        connection_type: "residential"
+      });
+      onSuccess();
+    } catch (error) {
+      // Error is handled by the mutation hook
+    }
   };
 
   return (
@@ -154,22 +129,22 @@ export const AddCustomerDialog = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="zone">Zone *</Label>
-              <Select value={formData.zone} onValueChange={(value) => setFormData(prev => ({ ...prev, zone: value }))}>
+              <Label htmlFor="zone_id">Zone *</Label>
+              <Select value={formData.zone_id} onValueChange={(value) => setFormData(prev => ({ ...prev, zone_id: value }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select Zone" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Zone A">Zone A</SelectItem>
-                  <SelectItem value="Zone B">Zone B</SelectItem>
-                  <SelectItem value="Zone C">Zone C</SelectItem>
+                  <SelectItem value="ZONE_A">Zone A</SelectItem>
+                  <SelectItem value="ZONE_B">Zone B</SelectItem>
+                  <SelectItem value="ZONE_C">Zone C</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="connectionType">Connection Type</Label>
-              <Select value={formData.connectionType} onValueChange={(value: any) => setFormData(prev => ({ ...prev, connectionType: value }))}>
+              <Label htmlFor="connection_type">Connection Type</Label>
+              <Select value={formData.connection_type} onValueChange={(value: any) => setFormData(prev => ({ ...prev, connection_type: value }))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -182,18 +157,12 @@ export const AddCustomerDialog = () => {
             </div>
           </div>
 
-          <div className="bg-muted/50 p-3 rounded-lg text-sm">
-            <p className="font-medium">Auto-generated:</p>
-            <p>Customer ID: {generateCustomerId()}</p>
-            <p>Meter ID: {generateMeterId()}</p>
-          </div>
-
           <div className="flex gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => setOpen(false)} className="flex-1">
               Cancel
             </Button>
-            <Button type="submit" className="flex-1 bg-gradient-primary">
-              Add Customer
+            <Button type="submit" className="flex-1 bg-gradient-primary" disabled={loading}>
+              {loading ? 'Adding...' : 'Add Customer'}
             </Button>
           </div>
         </form>

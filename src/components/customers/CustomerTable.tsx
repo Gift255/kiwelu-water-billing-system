@@ -9,43 +9,66 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Customer, getCustomerStatusBadgeVariant, getBalanceColor, dataStore } from "@/data/globalData";
-import { toast } from "@/components/ui/sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCustomerMutations } from "@/hooks/useApiData";
+
+interface Customer {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  address: string;
+  meter_number?: string;
+  zone_name?: string;
+  connection_type: string;
+  status: 'active' | 'suspended' | 'inactive';
+  balance: number;
+  last_reading_date?: string;
+}
 
 interface CustomerTableProps {
   customers: Customer[];
+  onUpdate: () => void;
 }
 
-export const CustomerTable: React.FC<CustomerTableProps> = ({ customers }) => {
+export const CustomerTable: React.FC<CustomerTableProps> = ({ customers, onUpdate }) => {
   const { hasPermission } = useAuth();
+  const { deleteCustomer, loading } = useCustomerMutations();
 
   const getStatusBadge = (status: string) => {
-    const variant = getCustomerStatusBadgeVariant(status);
-    const variantClasses = {
-      success: "bg-success/10 text-success",
-      destructive: "bg-destructive/10 text-destructive",
-      muted: "bg-muted text-muted-foreground",
-      secondary: ""
+    const variants = {
+      active: "bg-success/10 text-success",
+      suspended: "bg-destructive/10 text-destructive",
+      inactive: "bg-muted text-muted-foreground"
     };
     
-    if (variant === "secondary") {
-      return <Badge variant="secondary">{status}</Badge>;
-    }
-    
-    return <Badge className={variantClasses[variant as keyof typeof variantClasses]}>{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>;
+    return (
+      <Badge className={variants[status as keyof typeof variants] || ""}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    );
   };
 
-  const handleDeleteCustomer = (customerId: string, customerName: string) => {
+  const getBalanceColor = (balance: number) => {
+    if (balance < 0) return "text-destructive font-medium";
+    if (balance > 0) return "text-success font-medium";
+    return "text-muted-foreground";
+  };
+
+  const handleDeleteCustomer = async (customerId: string, customerName: string) => {
     if (confirm(`Are you sure you want to delete customer ${customerName}?`)) {
-      dataStore.deleteCustomer(customerId);
-      toast.success(`Customer ${customerName} deleted successfully`);
+      try {
+        await deleteCustomer(customerId);
+        onUpdate();
+      } catch (error) {
+        // Error is handled by the mutation hook
+      }
     }
   };
 
   const handleEditCustomer = (customerId: string) => {
     // In a real app, this would open an edit dialog
-    toast.info(`Edit functionality for customer ${customerId} would open here`);
+    console.log(`Edit customer ${customerId}`);
   };
 
   return (
@@ -79,23 +102,25 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({ customers }) => {
                     <Phone className="w-3 h-3" />
                     {customer.phone}
                   </div>
-                  <div className="flex items-center gap-1 text-sm">
-                    <Mail className="w-3 h-3" />
-                    {customer.email}
-                  </div>
+                  {customer.email && (
+                    <div className="flex items-center gap-1 text-sm">
+                      <Mail className="w-3 h-3" />
+                      {customer.email}
+                    </div>
+                  )}
                 </div>
               </TableCell>
               <TableCell>
-                <Badge variant="outline">{customer.meterId}</Badge>
+                <Badge variant="outline">{customer.meter_number || 'N/A'}</Badge>
               </TableCell>
-              <TableCell>{customer.zone}</TableCell>
+              <TableCell>{customer.zone_name || 'N/A'}</TableCell>
               <TableCell>{getStatusBadge(customer.status)}</TableCell>
               <TableCell>
                 <span className={getBalanceColor(customer.balance)}>
-                  TZS {customer.balance.toLocaleString()}
+                  TZS {customer.balance?.toLocaleString() || '0'}
                 </span>
               </TableCell>
-              <TableCell className="text-sm">{customer.lastReading}</TableCell>
+              <TableCell className="text-sm">{customer.last_reading_date || 'Never'}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" size="sm">
@@ -115,7 +140,7 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({ customers }) => {
                     size="sm"
                     onClick={() => handleDeleteCustomer(customer.id, customer.name)}
                     className="text-destructive hover:text-destructive"
-                    disabled={!hasPermission('all')}
+                    disabled={!hasPermission('all') || loading}
                     title={hasPermission('all') ? "Delete Customer" : "Only admins can delete customers"}
                   >
                     <Trash2 className="w-4 h-4" />
